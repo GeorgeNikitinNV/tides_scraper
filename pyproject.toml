@@ -1,0 +1,17 @@
+[project]
+name = "scrape-tides"
+version = "0.1.0"
+description = "Add your description here"
+authors = [{ name = "George Nikitin", email = "george.nikitin@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "environs>=14.2.0",
+    "paho-mqtt>=2.1.0",
+    "playwright>=1.52.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.0",
+]
