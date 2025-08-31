@@ -1,5 +1,7 @@
 import json
 import logging
+import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -15,7 +17,7 @@ logger.setLevel(logging.INFO)
 # Add console handler to output logs to CLI
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter("tide-scraper: %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
@@ -139,4 +141,22 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Check if running in continuous mode
+    continuous_mode = len(sys.argv) > 1 and sys.argv[1] == "--continuous"
+
+    if continuous_mode:
+        logger.info("Starting continuous mode - running every minute")
+        while True:
+            try:
+                main()
+                # Sleep for 60 seconds (1 minute)
+                time.sleep(60)
+            except KeyboardInterrupt:
+                logger.info("Stopping continuous mode")
+                break
+            except Exception as e:
+                logger.error(f"Error in continuous mode: {e}")
+                time.sleep(60)  # Wait before retrying
+    else:
+        # Single run mode
+        main()
