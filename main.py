@@ -34,7 +34,7 @@ URL = env("URL")
 CACHE_FILE = Path(__file__).parent / "tide_cache.json"
 CACHE_DURATION_HOURS = 1
 
-logger.info(
+logger.debug(
     f"""Using settings: 
     Broker: {MQTT_BROKER}:{MQTT_PORT} 
     User: {MQTT_USER}
@@ -49,22 +49,22 @@ def load_cached_data():
     if not CACHE_FILE.exists():
         logger.info("No cache file found")
         return None
-    
+
     try:
-        with open(CACHE_FILE, 'r') as f:
+        with open(CACHE_FILE, "r") as f:
             cached_data = json.load(f)
-        
+
         # Check if cache is still fresh
-        last_updated = datetime.fromisoformat(cached_data['last_updated'])
+        last_updated = datetime.fromisoformat(cached_data["last_updated"])
         cache_age = datetime.now(ZoneInfo("Pacific/Auckland")) - last_updated
-        
+
         if cache_age < timedelta(hours=CACHE_DURATION_HOURS):
             logger.info(f"Using cached data (age: {cache_age})")
             return cached_data
         else:
             logger.info(f"Cache expired (age: {cache_age})")
             return None
-            
+
     except (json.JSONDecodeError, KeyError, ValueError) as e:
         logger.warning(f"Error reading cache file: {e}")
         return None
@@ -73,7 +73,7 @@ def load_cached_data():
 def save_cached_data(data):
     """Save data to cache file."""
     try:
-        with open(CACHE_FILE, 'w') as f:
+        with open(CACHE_FILE, "w") as f:
             json.dump(data, f, indent=2)
         logger.info(f"Data cached to {CACHE_FILE}")
     except Exception as e:
@@ -83,7 +83,7 @@ def save_cached_data(data):
 def scrape_tide_data():
     """Scrape fresh tide data from the website."""
     logger.info("Scraping fresh data from website")
-    
+
     with sync_playwright() as p:
         logger.info("Launching chromium browser")
         browser = p.chromium.launch()
@@ -100,13 +100,13 @@ def scrape_tide_data():
             date = row.query_selector("th").text_content().strip()
             value = row.query_selector("td").text_content().replace("m", "").strip()
             tide_list_of_records.append({"date": date, "value": float(value)})
-        
+
         tide_payload = {
             "last_updated": datetime.now(ZoneInfo("Pacific/Auckland")).isoformat(),
             "data": tide_list_of_records,
         }
         browser.close()
-        
+
         return tide_payload
 
 
@@ -114,12 +114,12 @@ def main():
     """Main function that handles caching logic."""
     # Try to load cached data first
     tide_payload = load_cached_data()
-    
+
     # If no valid cached data, scrape fresh data
     if tide_payload is None:
         tide_payload = scrape_tide_data()
         save_cached_data(tide_payload)
-    
+
     # Publish to MQTT as JSON
     logger.info("Publishing to MQTT as JSON")
     auth = (
